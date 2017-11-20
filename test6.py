@@ -18,9 +18,10 @@ class Graph(pg.GraphItem):
         # How far to translate dragged point from original position
         self.drag_offset = None
         # Pen for highlighted pint
-        self.selected_pen = pg.mkPen(pg.mkColor('r'))
+        self.selected_pen = pg.mkPen('r')
         # Pen for default points
-        self.default_pen = default_pen = pg.mkPen(pg.mkColor('w'))
+        self.default_center_pen = pg.mkPen('w')
+        self.default_boundary_pen = pg.mkPen('b')
         # Number of points
         self.num_points = 0
         # Index of selected point
@@ -125,7 +126,6 @@ class Graph(pg.GraphItem):
 
         ### In the midst of a drag
 
-        #self.data['pos'][self.drag_index] = ev.pos() + self.drag_offset
         self.setPointCoords(self.drag_index, ev.pos() + self.drag_offset)
         self.updateGraph()
         ev.accept()
@@ -133,8 +133,12 @@ class Graph(pg.GraphItem):
 
     ### Sets coordinates of point with given index
     def setPointCoords(self, index, coords):
-        print "coords", coords
         self.data['pos'][index] = coords
+
+
+    ### Get coordinates of point with given index
+    def getPointCoords(self, index):
+        return self.data['pos'][index]
 
 
     ### Insert a point. Takes an index from 0 to self.num_center_points
@@ -157,23 +161,17 @@ class Graph(pg.GraphItem):
         self.data['data'] = np.append(self.data['data'], data_block)
 
         # Update symbol pens
-        self.data['symbolPen'] = np.append(self.data['symbolPen'], np.array([self.default_pen, self.default_pen, self.default_pen]))
-
-        self.updateGraph()
+        self.data['symbolPen'] = np.append(self.data['symbolPen'], np.array([self.default_center_pen, self.default_boundary_pen, self.default_boundary_pen]))
 
 
     ### Adds a point at beginning of path
-    def addPointStart(self, x, y):
-        pass
+    def addPointStart(self, c_pos, b1_pos, b2_pos):
+        self.insertPoint(0, c_pos, b1_pos, b2_pos)
 
 
     ### Adds a point at end of path
-    def addPointEnd(self, x, y):
-        self.num_points += 1
-        self.data_dict['x'] = np.append(self.data_dict['x'], x)
-        self.data_dict['y'] = np.append(self.data_dict['y'], y)
-        self.data_dict['data'] = range(self.num_points)
-        self.data_dict['symbolPen'].append(self.default_pen)
+    def addPointEnd(self, c_pos, b1_pos, b2_pos):
+        self.insertPoint(self.num_center_points, c_pos, b1_pos, b2_pos)
 
 
     ### Remove points with given indexes
@@ -187,8 +185,7 @@ class Graph(pg.GraphItem):
         self.setAdjacency()
         self.setPointData()
         self.setSymbolPens()
-
-        self.updateGraph()
+        self.selected_indexes.clear()
 
 
     ### Set adjacency data after points have been inserted or removed
@@ -217,7 +214,11 @@ class Graph(pg.GraphItem):
     ### Sets symbol pens after points have been inserted or removed
     def setSymbolPens(self):
         pens = np.empty(3*self.num_center_points, dtype=object)
-        pens[:] = self.default_pen
+
+        pens[0::3] = self.default_center_pen
+        pens[1::3] = self.default_boundary_pen
+        pens[2::3] = self.default_boundary_pen
+
         self.data['symbolPen'] = pens
 
 
@@ -231,9 +232,8 @@ class Graph(pg.GraphItem):
 
     ### Deselect all currently selected point
     def deselectAll(self):
-        print "deselect", self.selected_indexes
         for index in self.selected_indexes:
-            self.data['symbolPen'][index] = self.default_pen
+            self.data['symbolPen'][index] = self.default_center_pen
         self.selected_indexes.clear()
 
 
@@ -241,31 +241,53 @@ class Graph(pg.GraphItem):
     ### extend mode is toggled
     def setExtendMode(self, mode):
         self.extend_mode = mode
-        print "extend mode", self.extend_mode
 
 
     ### Respond to a click that's not on a point
     def offPointClick(self):
-        self.setExtendMode(False)
-        self.deselectAll()
+        if self.extend_mode:
+            self.extend()
+        else :
+            self.deselectAll()
+
         self.updateGraph()
 
 
-    ### Point click event: highlight the clicked point
-    def pointClicked(self, p, pts):
-        print "sf"
+    ### Respond to mouse movement
+    def mouseMove(self, pos):
+        # Get mouse coordinates
+        coords = np.array([pos.x(), pos.y()])
+
+        # Check if we're in extend mode
         if self.extend_mode:
-            """
-            self.deselectAll()
-            if self.moving_point_index == 0:
-                self.addPointStart(*self.getPointCoords(self.moving_point_index))
-            else :
-                self.addPointEnd(*self.getPointCoords(self.moving_point_index))
-                self.moving_point_index += 1"""
+            # Move the first or last point + children to mouse coordinates
+            self.setPointCoords(self.moving_point_index, coords)
+            self.setPointCoords(self.moving_point_index + 1, coords + np.array([0., 0.1]))
+            self.setPointCoords(self.moving_point_index + 2, coords + np.array([0., -0.1]))
+            self.updateGraph()
+
+
+    ### Extend the current path
+    def extend(self):
+        self.deselectAll()
+        pos = self.getPointCoords(self.moving_point_index)
+
+        if self.moving_point_index == 0:
+            self.addPointStart(pos, pos, pos)
         else :
+            self.addPointEnd(pos, pos, pos)
+            self.moving_point_index += 3
+
+
+    ### Event called when a point is clicked
+    def pointClicked(self, p, pts):
+        if self.extend_mode:
+            # If we're in extend mode, keep extending the path
+            self.extend()
+        else :
+            # Otherwise selec a point
             if not self.ctrl_pressed:
                 self.deselectAll()
-            print "sdf"
             self.addSelectedPoint(pts[0].data()['index'])
 
         self.updateGraph()
@@ -283,38 +305,69 @@ class Graph(pg.GraphItem):
     def extendKeyPressed(self):
 
         # Conditional to check if there's one selected point and it's either
-        # the first or last node
+        # the first or last center point
+
+        # One point is selected
         one_selected = len(self.selected_indexes) == 1
+        # First center point is selected
         first_selected = 0 in self.selected_indexes
-        last_selected = (self.num_center_points - 1)*3 in self.selected_indexes
+        # Last center point is selected
+        last_c_index =  (self.num_center_points - 1)*3
+        last_selected = last_c_index in self.selected_indexes
+        # Combined conditional
         cond = one_selected and (last_selected or first_selected)
 
         if (not self.extend_mode) and cond:
             # Enable extend mode
             self.setExtendMode(True)
-
-
-            # If selected point is at beginning of path, add point starting from
-            # there. If selected point is at end, start it from there.
             self.deselectAll()
 
+            # If selected point is at beginning of path, add points starting from
+            # there. If selected point is at end, add points from there.
+
             if first_selected:
-                self.addPointStart(*self.getPointCoords(0))
+                pos = self.getPointCoords(0)
+                # Add a point + children
+                self.addPointStart(pos, pos, pos)
+                # Set moving index to the index of the newly added center point
                 self.moving_point_index = 0
             else :
-                self.addPointEnd(*self.getPointCoords(self.num_points - 1))
-                self.moving_point_index = self.num_points - 1
-
-            #self.updateData()
+                pos = self.getPointCoords(last_c_index)
+                self.addPointEnd(pos, pos, pos)
+                self.moving_point_index = (self.num_center_points - 1)*3
 
         else :
-            print "dasdf"
+            # Disable extend mode
             self.setExtendMode(False)
             self.deselectAll()
 
         self.updateGraph()
 
 
+    ### Triggered when the subdivide key is pressed
+    def subdivideKeyPressed(self):
+        # If we're not in extend mode, check if there are two points selected
+        if not self.extend_mode and len(self.selected_indexes) == 2:
+            indexes = list(self.selected_indexes)
+
+            # Check if two adjacent center points are selected
+            cond1 = self.data['data']['type'][indexes[0]] == 'c'
+            cond2 = abs(indexes[0] - indexes[1]) == 3
+
+            if cond1 and cond2:
+                # Insert a new center point between the two selected center points
+                pos1 = self.data['pos'][indexes[0]]
+                pos2 = self.data['pos'][indexes[1]]
+                c_pos = (pos1 + pos2) / 2.
+                b1_pos = c_pos + np.array([0., 0.1])
+                b2_pos = c_pos + np.array([0., -0.1])
+
+                self.deselectAll()
+                self.insertPoint(min(indexes) / 3 + 1, c_pos, b1_pos, b2_pos)
+                self.updateGraph()
+
+
+    ### Update graph visuals after data has been changed
     def updateGraph(self):
         pg.GraphItem.setData(self, **self.data)
 
@@ -338,9 +391,10 @@ xb2 = xc[:]
 yb2 = yc - 0.5
 
 g.setData(xc=xc, yc=yc, xb1=xb1, yb1=yb1, xb2=xb2, yb2=yb2, size = 25., pxMode = True)
-g.insertPoint(0, np.array([-0.75, 0.]), np.array([-0.75, 0.5]), np.array([-0.75, -0.5]))
-g.insertPoint(0, np.array([-0.9, 0.]), np.array([-0.9, 0.5]), np.array([-0.9, -0.5]))
-g.insertPoint(5, np.array([0.9, 0.]), np.array([0.9, 0.5]), np.array([0.9, -0.5]))
+g.addPointStart(np.array([-0.75, 0.]), np.array([-0.75, 0.5]), np.array([-0.75, -0.5]))
+#g.insertPoint(0, np.array([-0.9, 0.]), np.array([-0.9, 0.5]), np.array([-0.9, -0.5]))
+g.addPointEnd(np.array([0.9, 0.]), np.array([0.9, 0.5]), np.array([0.9, -0.5]))
+g.updateGraph()
 
 key_pressed = {}
 
@@ -350,7 +404,7 @@ def mouse_click(e):
 # Key press event
 def key_press(e):
     if e.key() == 83:
-        g.sKeyPressed()
+        g.subdivideKeyPressed()
     if e.key() == 16777249:
         g.ctrl_pressed = True
     if e.key() == 16777223:
@@ -368,9 +422,7 @@ def key_release(e):
 # Mouse move
 def mouse_move(ev):
     if not ev.isExit():
-        x = v.mapSceneToView(ev.pos()).x()
-        y = v.mapSceneToView(ev.pos()).y()
-        #g.mouseMove(x, y)
+        g.mouseMove(v.mapSceneToView(ev.pos()))
 
 v.mouseClickEvent = mouse_click
 w.keyboardGrabber()
