@@ -28,7 +28,7 @@ class RightPanel(QtGui.QWidget):
 
         # Plot path button
         self.plot_path_button = QtGui.QPushButton('Plot Path')
-        self.plot_path_button.setEnabled(False)
+        self.plot_path_button.setEnabled(True)
         self.plot_path_button.setMaximumWidth(max_width)
         self.layout().addWidget(self.plot_path_button)
 

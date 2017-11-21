@@ -49,12 +49,11 @@ class MainPanel(QtGui.QStackedWidget):
         self.flow_integrator = FlowIntegrator(self.data_loader)
 
 
-
     # Set the currently displayed data field
     def set_field(self, field):
         self.current_field = field
         self.setCurrentWidget(self.data_view_panels[field])
-
+        
 
     # Draw a flowline
     def display_flowline(self, x, y):

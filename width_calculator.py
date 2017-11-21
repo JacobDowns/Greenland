@@ -156,6 +156,6 @@ class WidthCalculator():
         plt.show()"""
 
         fg = FlowlineGraph()
-        fg.setData(xc=self.xs_spaced, yc=self.ys_spaced, xb1=xs1, yb1=ys1, xb2=xs2, yb2=ys2, size = 20., pxMode = True, pen = pg.mkPen('r', width=2))
+        fg.setData(xc=self.xs_spaced, yc=self.ys_spaced, xb1=xs1, yb1=ys1, xb2=xs2, yb2=ys2, size = 25., pxMode = True)
         return fg
         #quit()

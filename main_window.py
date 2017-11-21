@@ -13,6 +13,7 @@ class MainWindow():
 
         # Load the data
         self.data_loader = DataLoader()
+        self.color_loader = ColorDataLoader()
 
         # Create application
         self.app = QtGui.QApplication([])
@@ -30,7 +31,7 @@ class MainWindow():
         self.main_widget.setLayout(QtGui.QHBoxLayout())
 
         # Add main panel (where stuff is plotted)
-        self.main_panel = MainPanel(self)
+        self.main_panel = DataViewWidget(self)
         self.main_widget.layout().addWidget(self.main_panel)
 
         # Add right panel (with drop down box, buttons, text box)
@@ -47,9 +48,11 @@ class MainWindow():
         self.key_pressed = {}
         self.key_pressed['ctrl'] = False
         self.key_pressed['shift'] = False
+        self.key_pressed['e'] = False
+        self.key_pressed['s'] = False
         self.main_widget.keyboardGrabber()
-        self.main_widget.keyPressEvent = self.key_press
-        self.main_widget.keyReleaseEvent = self.key_release
+        self.main_widget.keyPressEvent = self.keyPress
+        self.main_widget.keyReleaseEvent = self.keyRelease
 
         self.main_window.show()
 
@@ -57,37 +60,63 @@ class MainWindow():
     # Change the data field displayed in the main panel
     def change_field(self, index):
         field = self.right_panel.combo_order[index]
-        self.main_panel.set_field(field)
+        self.main_panel.setField(field)
 
 
     # Key press event
-    def key_press(self, e):
+    def keyPress(self, e):
+        if e.key() == 69:
+            self.key_pressed['e'] = True
+            self.main_panel.eKeyPressed()
         if e.key() == 16777248:
             self.key_pressed['shift'] = True
         elif e.key() == 16777249:
             self.key_pressed['ctrl'] = True
+            self.main_panel.ctrlKeyPressed()
+        elif e.key() == 16777223:
+            self.key_pressed['del'] = True
+            self.main_panel.delKeyPressed()
+        elif e.key() == 83:
+            self.key_pressed['s'] = True
+            self.main_panel.sKeyPressed()
 
         print self.key_pressed
 
     # Key release
-    def key_release(self, e):
+    def keyRelease(self, e):
+        if e.key() == 69:
+            self.key_pressed['e'] = False
         if e.key() == 16777248:
             self.key_pressed['shift'] = False
         elif e.key() == 16777249:
             self.key_pressed['ctrl'] = False
+            self.main_panel.ctrlKeyReleased()
+        elif e.key() == 16777223:
+            self.key_pressed['del'] = False
+        elif e.key() == 83:
+            self.key_pressed['s'] = False
 
         print self.key_pressed
 
 
-    def mouse_click(self, e):
-        x = e.pos().x()
-        y = e.pos().y()
+    # Mouse click event
+    def mouseClick(self, ev):
+        x = ev.pos().x()
+        y = ev.pos().y()
 
-        # ctrl + click
         if self.key_pressed['shift']:
-            self.main_panel.display_flowline(x, y)
-        else:
-            self.right_panel.print_point_data(x, y)
+
+            self.main_panel.addFlowline(x,y)
+        else :
+            self.main_panel.mouseClick()
+
+    # Mouse move event
+    # Mouse move
+    def mouseMove(self, ev):
+        if not ev.isExit():
+            self.main_panel.mouseMove(ev)
+
+
 
 
 mw = MainWindow()

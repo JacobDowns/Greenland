@@ -2,26 +2,18 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 import numpy as np
 
-# Enable antialiasing for prettier plots
-pg.setConfigOptions(antialias=True)
-
-w = pg.GraphicsWindow()
-w.setWindowTitle('pyqtgraph example: CustomGraphItem')
-v = w.addViewBox()
-v.setAspectLocked()
-
-class Graph(pg.GraphItem):
+class FlowlineGraph(pg.GraphItem):
 
     def __init__(self):
         # Index of point being dragged
         self.drag_index = None
         # How far to translate dragged point from original position
         self.drag_offset = None
-        # Pen for highlighted pint
-        self.selected_pen = pg.mkPen('r')
-        # Pen for default points
-        self.default_center_pen = pg.mkPen('w')
-        self.default_boundary_pen = pg.mkPen('b')
+        # Brush for highlighted point
+        self.selected_brush = pg.mkBrush('r')
+        # Brush for default points
+        self.default_center_brush = pg.mkBrush('k')
+        self.default_boundary_brush = pg.mkBrush('b')
         # Number of points
         self.num_points = 0
         # Index of selected point
@@ -84,11 +76,7 @@ class Graph(pg.GraphItem):
             ### Refresh adjacency and point data
             self.setAdjacency()
             self.setPointData()
-            self.setSymbolPens()
-
-
-            ### Define symbol pens
-
+            self.setSymbolBrushes()
             self.updateGraph()
 
 
@@ -160,8 +148,8 @@ class Graph(pg.GraphItem):
             (last_c_index + 2, 'b')], dtype = self.data['data'].dtype)
         self.data['data'] = np.append(self.data['data'], data_block)
 
-        # Update symbol pens
-        self.data['symbolPen'] = np.append(self.data['symbolPen'], np.array([self.default_center_pen, self.default_boundary_pen, self.default_boundary_pen]))
+        # Update symbol brushes
+        self.data['symbolBrush'] = np.append(self.data['symbolBrush'], np.array([self.default_center_brush, self.default_boundary_brush, self.default_boundary_brush]))
 
 
     ### Adds a point at beginning of path
@@ -184,7 +172,7 @@ class Graph(pg.GraphItem):
         # Reset the adjacency and point data, which is now messed up
         self.setAdjacency()
         self.setPointData()
-        self.setSymbolPens()
+        self.setSymbolBrushes()
         self.selected_indexes.clear()
 
 
@@ -211,29 +199,29 @@ class Graph(pg.GraphItem):
         self.data['data']['type'][:] = point_types
 
 
-    ### Sets symbol pens after points have been inserted or removed
-    def setSymbolPens(self):
-        pens = np.empty(3*self.num_center_points, dtype=object)
+    ### Sets symbol brushes after points have been inserted or removed
+    def setSymbolBrushes(self):
+        brushes = np.empty(3*self.num_center_points, dtype=object)
 
-        pens[0::3] = self.default_center_pen
-        pens[1::3] = self.default_boundary_pen
-        pens[2::3] = self.default_boundary_pen
+        brushes[0::3] = self.default_center_brush
+        brushes[1::3] = self.default_boundary_brush
+        brushes[2::3] = self.default_boundary_brush
 
-        self.data['symbolPen'] = pens
+        self.data['symbolBrush'] = brushes
 
 
-    ### Indicates a point is selected by usnig a different pen
+    ### Indicates a point is selected by usnig a different brush
     def addSelectedPoint(self, index):
         # Only select center points
         if self.data['data'][index][1] == 'c':
             self.selected_indexes.add(index)
-            self.data['symbolPen'][index] = self.selected_pen
+            self.data['symbolBrush'][index] = self.selected_brush
 
 
     ### Deselect all currently selected point
     def deselectAll(self):
         for index in self.selected_indexes:
-            self.data['symbolPen'][index] = self.default_center_pen
+            self.data['symbolBrush'][index] = self.default_center_brush
         self.selected_indexes.clear()
 
 
@@ -245,6 +233,7 @@ class Graph(pg.GraphItem):
 
     ### Respond to a click that's not on a point
     def offPointClick(self):
+        print "g off point click"
         if self.extend_mode:
             self.extend()
         else :
@@ -370,71 +359,3 @@ class Graph(pg.GraphItem):
     ### Update graph visuals after data has been changed
     def updateGraph(self):
         pg.GraphItem.setData(self, **self.data)
-
-
-
-
-
-
-
-g = Graph()
-v.addItem(g)
-
-## Define positions of nodes
-xc = np.array([-0.5, 0., 0.5])
-yc = np.array([0.,   0., 0.])
-
-xb1 = xc[:]
-yb1 = yc + 0.5
-
-xb2 = xc[:]
-yb2 = yc - 0.5
-
-g.setData(xc=xc, yc=yc, xb1=xb1, yb1=yb1, xb2=xb2, yb2=yb2, size = 25., pxMode = True)
-g.addPointStart(np.array([-0.75, 0.]), np.array([-0.75, 0.5]), np.array([-0.75, -0.5]))
-#g.insertPoint(0, np.array([-0.9, 0.]), np.array([-0.9, 0.5]), np.array([-0.9, -0.5]))
-g.addPointEnd(np.array([0.9, 0.]), np.array([0.9, 0.5]), np.array([0.9, -0.5]))
-g.updateGraph()
-
-key_pressed = {}
-
-def mouse_click(e):
-    g.offPointClick()
-
-# Key press event
-def key_press(e):
-    if e.key() == 83:
-        g.subdivideKeyPressed()
-    if e.key() == 16777249:
-        g.ctrl_pressed = True
-    if e.key() == 16777223:
-        key_pressed['del'] = True
-        g.deleteKeyPressed()
-    if e.key() == 69:
-        key_pressed['e'] = True
-        g.extendKeyPressed()
-
-# Key release
-def key_release(e):
-    if e.key() == 16777249:
-        g.ctrl_pressed = False
-
-# Mouse move
-def mouse_move(ev):
-    if not ev.isExit():
-        g.mouseMove(v.mapSceneToView(ev.pos())
-
-v.mouseClickEvent = mouse_click
-w.keyboardGrabber()
-w.keyPressEvent = key_press
-w.keyReleaseEvent = key_release
-v.hoverEvent = mouse_move
-
-
-
-
-## Start Qt event loop unless running in interactive mode or using pyside.
-if __name__ == '__main__':
-    import sys
-    if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
-        QtGui.QApplication.instance().exec_()

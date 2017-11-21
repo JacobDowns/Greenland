@@ -34,7 +34,7 @@ class FlowIntegrator():
         u0 = np.array([x0, y0, 0.])
         self.integrator.set_initial_value(u0, 0.0)
         # time step (years)
-        dt = 0.0025
+        dt = 0.002
 
         # vx and vy at current location
         vx = self.data_loader.get_field_val('VX', x0, y0)
