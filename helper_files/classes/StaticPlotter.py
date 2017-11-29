@@ -1,35 +1,17 @@
-from pyqtgraph.Qt import QtCore, QtGui #, QtWidgets
+from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
 from pyqtgraph import LegendItem
-import PyQt4
-from pylab import plot,show,ion,subplots, sqrt
-from dolfin import project
-from MyLegend import *
-from scipy.optimize import curve_fit
 import numpy as np
-from ..dataset_objects import *
-from ..peakdetect import *
-from ..data_functions import interpolateData
 
-from ..gui import *
-import scipy.signal as signal
+"""
+Window for plottig a flowline.
+"""
 
-def gauss(x, *p):
-    A, mu, sigma = p
-    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
-
-def gaussian(x, A, x0, sig):
-    return A*math.exp(-(x-x0)**2/(2.0*sig**2))
-
-def fit(p,x):
-    return np.sum([gaussian(x, p[i*3],p[i*3+1],p[i*3+2])
-                   for i in xrange(len(p)/3)],axis=0)
-
-class StaticPlot(QtGui.QMainWindow):
+class FlowlinePlot(QtGui.QMainWindow):
     def __init__(self, parent):
         self.parent = parent
         QtGui.QMainWindow.__init__(self, self.parent)
-        self.setWindowTitle('Static Plotter')
+        self.setWindowTitle('Flowline Plot')
         self.mainWidget = QtGui.QWidget()
         self.setCentralWidget(self.mainWidget)
         self.mainLayout = QtGui.QHBoxLayout()
@@ -55,8 +37,6 @@ class StaticPlot(QtGui.QMainWindow):
         self.rightPanelLayout = QtGui.QGridLayout()
         self.rightPanelWidget.setLayout(self.rightPanelLayout)
 
-        self.resLabel = QtGui.QLabel('Spatial Resolution(m)')
-        self.resLineEdit = QtGui.QLineEdit()
         self.plotButt = QtGui.QPushButton('Plot')
         self.errorLabel = QtGui.QLabel('')
         self.plotButt.clicked.connect(self.run)
@@ -106,31 +86,6 @@ class StaticPlot(QtGui.QMainWindow):
 
         self.mainLayout.addWidget(self.leftPanelWidget)
         self.mainLayout.addWidget(self.rightPanelWidget)
-
-
-        # if surfaceCheck.checkState() == 2:
-        #     surfPlt  = self.plt1.getPlotItem().plot(surface.distanceData, surface.pathData, pen=surface.pen)
-        #     self.legend1.addItem(surfPlt, 'Surface(m)')
-        #
-        # if vWidthCheck.checkState() == 2:
-        #     vWidthPlt = self.plt1.getPlotItem().plot(velocityWidth.distanceData, velocityWidth.pathData, pen=velocityWidth.pen)
-        #     self.legend1.addItem(vWidthPlt, 'Vel. Width(m)')
-        #
-        # if bedCheck.checkState() == 2:
-        #     bedPlt   = self.plt1.getPlotItem().plot(bed.distanceData, bed.pathData, pen=bed.pen)
-        #     self.legend1.addItem(bedPlt, 'Bed(m)')
-        #
-        # if thicknessCheck.checkState() == 2:
-        #     thickPlt = self.plt1.getPlotItem().plot(thickness.distanceData, thickness.pathData, pen=thickness.pen)
-        #     self.legend1.addItem(thickPlt, 'Thickness(m)')
-        #
-        # if velocityCheck.checkState() == 2:
-        #     velocityPlt = self.plt2.getPlotItem().plot(velocity.distanceData, velocity.pathData, pen=velocity.pen)
-        #     self.legend2.addItem(velocityPlt, 'Velocity(m/yr)')
-        #
-        # if smbCheck.checkState() == 2:
-        #     smbPlt = self.plt3.getPlotItem().plot(smb.distanceData, smb.pathData, pen=smb.pen)
-        #     self.legend3.addItem(smbPlt, 'SMB(m)')
 
         self.legend1.setParentItem(self.plt1.getPlotItem())
         self.legend2.setParentItem(self.plt2.getPlotItem())
@@ -327,4 +282,3 @@ def runStaticPlot():
 
     legend3.setParentItem(plt3.getPlotItem())
     staticPlotWindow.show()
-

@@ -82,6 +82,7 @@ class MainWindow():
 
         print self.key_pressed
 
+
     # Key release
     def keyRelease(self, e):
         if e.key() == 69:
@@ -99,6 +100,7 @@ class MainWindow():
         print self.key_pressed
 
 
+
     # Mouse click event
     def mouseClick(self, ev):
         x = ev.pos().x()
@@ -110,11 +112,22 @@ class MainWindow():
         else :
             self.main_panel.mouseClick()
 
+
     # Mouse move event
-    # Mouse move
     def mouseMove(self, ev):
         if not ev.isExit():
             self.main_panel.mouseMove(ev)
+
+
+    # Plot path button in right panel clicked
+    def plotPathClicked(self, ev):
+        self.main_panel.plotPathClicked()
+
+
+    # Generate mesh button
+    def generateMeshClicked(self, ev):
+        self.main_panel.generateMeshClicked()
+
 
 
 

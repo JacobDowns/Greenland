@@ -200,7 +200,7 @@ def changeMap(index):
         print maps[index]
         print
         print
-        
+
         maps[index].imageItem.hoverEvent = mouseMoved
         maps[index].imageItem.mouseClickEvent = mouseClick
         maps[index].plotWidget.getPlotItem().getViewBox().setRange(xRange=vr[0], yRange=vr[1], padding=0.0)

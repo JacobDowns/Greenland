@@ -31,12 +31,16 @@ class RightPanel(QtGui.QWidget):
         self.plot_path_button.setEnabled(True)
         self.plot_path_button.setMaximumWidth(max_width)
         self.layout().addWidget(self.plot_path_button)
+        # Event handler
+        self.plot_path_button.clicked.connect(main_window.plotPathClicked)
 
         # Generate mesh button
         self.generate_mesh_button = QtGui.QPushButton('Generate Mesh')
-        self.generate_mesh_button.setEnabled(False)
+        self.generate_mesh_button.setEnabled(True)
         self.generate_mesh_button.setMaximumWidth(max_width)
         self.layout().addWidget(self.generate_mesh_button)
+        # Event handler
+        self.generate_mesh_button.clicked.connect(main_window.generateMeshClicked)
 
         # Text output box
         self.text_box = QtGui.QTextBrowser()

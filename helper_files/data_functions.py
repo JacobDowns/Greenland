@@ -361,6 +361,7 @@ def calcVelWidth(x0, y0, x1, y1, draw):
 
 
 def interpolateData(runModel, dr, staticPlotter=None):
+
     '''
     Calculate the data for bottom plot or to run the model.
     If botPlotBool, calculate all the data.  Else, calculate just bed/surface.
@@ -385,7 +386,7 @@ def interpolateData(runModel, dr, staticPlotter=None):
     mix = min(pt.x for pt in vpts)
     miy = min(pt.y for pt in vpts)
 
-    
+
     if velocityCheck.checkState() == 2 or runModel:
         # vxInterp, vyInterp = getInterpolators(velocity.vx, velocity.name, mix, miy, x1=mxx, y1=mxy, d2=velocity.vy)
         velInterp = getInterpolators(velocity.data, 'velocity', mix, miy, x1=mxx, y1=mxy)
@@ -408,7 +409,7 @@ def interpolateData(runModel, dr, staticPlotter=None):
 
     for i in range(1, len(vpts)):
         '''
-        This part compares neighbor points to each other. 
+        This part compares neighbor points to each other.
         '''
 
         theta = np.arctan2(float(vpts[i].cy - vpts[i - 1].cy), float(vpts[i].cx - vpts[i - 1].cx))
@@ -558,4 +559,3 @@ def interpolateData(runModel, dr, staticPlotter=None):
         smb.distanceData = graphX
     if runModel or (staticPlotter and staticPlotter.vWidthCheck.checkState() == 2):
         velocityWidth.distanceData = graphX
-

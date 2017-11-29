@@ -233,7 +233,6 @@ class FlowlineGraph(pg.GraphItem):
 
     ### Respond to a click that's not on a point
     def offPointClick(self):
-        print "g off point click"
         if self.extend_mode:
             self.extend()
         else :
@@ -250,7 +249,7 @@ class FlowlineGraph(pg.GraphItem):
 
         # Check if we're in extend mode
         if self.extend_mode:
-            # Move the first or last point + children to mouse coordinates
+            # Move the first or last point + associated boundary points to mouse coordinates
             self.setPointCoords(self.moving_point_index, coords)
             self.setPointCoords(self.moving_point_index + 1, coords + np.array([0., 5]))
             self.setPointCoords(self.moving_point_index + 2, coords + np.array([0., -5]))
@@ -355,6 +354,19 @@ class FlowlineGraph(pg.GraphItem):
                 self.deselectAll()
                 self.insertPoint(min(indexes) / 3 + 1, c_pos, b1_pos, b2_pos)
                 self.updateGraph()
+
+
+    ### Utility function that gets the center point coordinates
+    def getCenterCoords(self):
+        return self.data['pos'][0::3]
+
+
+    ### Utility function that gets the ice stream width
+    def getWidth(self):
+        # Coordinates on one ice stream boundary
+        coords1 = self.data['pos'][1::3]
+        coords2 = self.data['pos'][2::3]
+        return np.sqrt(((coords1 - coords2)**2).sum(axis = 1))
 
 
     ### Update graph visuals after data has been changed

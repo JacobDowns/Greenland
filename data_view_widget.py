@@ -6,6 +6,8 @@ from helper_files.classes.ColorBarAnchorWidget import ColorBarAnchorWidget
 import pyqtgraph as pg
 from flow_integrator import FlowIntegrator
 from width_calculator import WidthCalculator
+from flowline_plot import FlowlinePlot
+from flowline_data import FlowlineData
 import numpy as np
 
 
@@ -130,6 +132,7 @@ class DataViewWidget(pg.PlotWidget):
         for g in self.flowline_graphs:
             g.offPointClick()
 
+
     ### ctrl key pressed
     def ctrlKeyPressed(self):
         for g in self.flowline_graphs:
@@ -164,3 +167,28 @@ class DataViewWidget(pg.PlotWidget):
     def mouseMove(self, ev):
         for g in self.flowline_graphs:
             g.mouseMove(self.getViewBox().mapToView(ev.pos()))
+
+
+    ### Plot path button clicked
+    def plotPathClicked(self):
+        if len(self.flowline_graphs) > 0:
+            plot = FlowlinePlot(self.main_window, self.flowline_graphs[0])
+
+
+
+    # Generate mesh button
+    def generateMeshClicked(self):
+        if len(self.flowline_graphs) > 0:
+            file_name, ok = QtGui.QInputDialog.getText(self, 'Input Dialog',
+                'File Name (meshes/)')
+
+            if ok:
+                if file_name == '':
+                    file_name = 'mesh'
+
+                file_name += '.h5'
+
+                # Get flowline data
+                fd = FlowlineData(self.main_window, self.flowline_graphs[0])
+                fd.generate_mesh()
+                print fd
