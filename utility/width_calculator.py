@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from utility.flowline_graph import *
 
 """
-Integrates along flow line.
+Calcululates ice stream with.
 """
 
 class WidthCalculator():
@@ -18,10 +18,10 @@ class WidthCalculator():
         ts2 = np.linspace(0., 1., len(xb1))
         ts3 = np.linspace(0., 1., len(xb2))
 
-        # Center curve x(t), y(t) with 0 <= t <=1
+        # Parameterized Center curve x(t), y(t) with 0 <= t <=1
         self.xc_interp = interp1d(ts1, xc)
         self.yc_interp = interp1d(ts1, yc)
-        # First curve x(t), y(t) with 0 <= t <=1
+        # Firstboundary  curve x(t), y(t) with 0 <= t <=1
         self.xb1_interp = interp1d(ts2, xb1)
         self.yb1_interp = interp1d(ts2, yb1)
         # Second boundary curve x(t), y(t) with 0 <= t <=1
@@ -34,7 +34,7 @@ class WidthCalculator():
         self.space_points()
 
 
-    # Find evenly spaced points along the center curve
+    ### Find evenly spaced points along the center curve
     def space_points(self):
         # Previous point along the curve
         x_last = self.xc_interp(0.)
@@ -78,7 +78,7 @@ class WidthCalculator():
         self.ts_spaced = np.array(ts_spaced)
 
 
-    # Calculates width from centerline to boundary curve
+    ### Calculates width from centerline to boundary curve
     def calc_width(self, xb_interp, yb_interp):
         # Delta t used to compute tangent to center curve
         dt = 1e-6
@@ -135,30 +135,11 @@ class WidthCalculator():
         return int_xs, int_ys
 
 
+    ### Return np array of widths
     def get_width(self):
         xs1, ys1 = self.calc_width(self.xb1_interp, self.yb1_interp)
         xs2, ys2 = self.calc_width(self.xb2_interp, self.yb2_interp)
 
-        """
-        ts = np.linspace(0., 1., 2000)
-        xcs = self.xc_interp(ts)
-        ycs = self.yc_interp(ts)
-        xbs1 = self.xb1_interp(ts)
-        ybs1 = self.yb1_interp(ts)
-        xbs2 = self.xb2_interp(ts)
-        ybs2 = self.yb2_interp(ts)
-
-        plt.plot(xcs, ycs, 'k')
-        plt.plot(xbs1, ybs1, 'b')
-        plt.plot(xbs2, ybs2, 'b')
-
-        for i in range(len(self.xs_spaced)):
-            plt.plot([xs2[i], self.xs_spaced[i], xs1[i]], [ys2[i], self.ys_spaced[i], ys1[i]], 'ro-')
-
-        plt.axes().set_aspect('equal', 'datalim')
-        plt.show()"""
-
         fg = FlowlineGraph()
         fg.setData(xc=self.xs_spaced, yc=self.ys_spaced, xb1=xs1, yb1=ys1, xb2=xs2, yb2=ys2, size = 25., pxMode = True)
         return fg
-        #quit()
