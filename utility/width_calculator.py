@@ -1,10 +1,10 @@
 
 import numpy as np
 from scipy.integrate import ode
-from scipy import interpolate
+from scipy.interpolate import interp1d
 from scipy import optimize
 from matplotlib import pyplot as plt
-from flowline_graph import *
+from utility.flowline_graph import *
 
 """
 Integrates along flow line.
@@ -12,18 +12,24 @@ Integrates along flow line.
 
 class WidthCalculator():
 
-    def __init__(self, xc_interp, yc_interp, xb1_interp, yb1_interp, xb2_interp, yb2_interp):
+    def __init__(self, xc, yc, xb1, yb1, xb2, yb2, resolution):
+
+        ts1 = np.linspace(0., 1., len(xc))
+        ts2 = np.linspace(0., 1., len(xb1))
+        ts3 = np.linspace(0., 1., len(xb2))
 
         # Center curve x(t), y(t) with 0 <= t <=1
-        self.xc_interp = xc_interp
-        self.yc_interp = yc_interp
+        self.xc_interp = interp1d(ts1, xc)
+        self.yc_interp = interp1d(ts1, yc)
         # First curve x(t), y(t) with 0 <= t <=1
-        self.xb1_interp = xb1_interp
-        self.yb1_interp = yb1_interp
+        self.xb1_interp = interp1d(ts2, xb1)
+        self.yb1_interp = interp1d(ts2, yb1)
         # Second boundary curve x(t), y(t) with 0 <= t <=1
-        self.xb2_interp = xb2_interp
-        self.yb2_interp = yb2_interp
+        self.xb2_interp = interp1d(ts3, xb2)
+        self.yb2_interp = interp1d(ts3, yb2)
 
+        # Desired mesh resolution
+        self.resolution = resolution
         # Caclulate evenly spaced points along the center line
         self.space_points()
 
@@ -41,7 +47,7 @@ class WidthCalculator():
         # Optimization parameter
         t_opt = 0.
         # Desired spacing between points on curve
-        spacing = 15.0
+        spacing = self.resolution / 150.
 
         # Distance from point on curve at time t to last point
         def f(t):
@@ -100,9 +106,6 @@ class WidthCalculator():
             print tan
             # Return component of (u,v) in direction of tangent
             return np.dot(np.array([u,v]), tan)
-
-
-
 
         # Compute tangent lines to curve at even intervals and find intersections
         i = 0

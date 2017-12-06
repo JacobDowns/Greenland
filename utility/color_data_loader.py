@@ -2,7 +2,7 @@
 from PyQt4 import QtCore, QtGui
 import h5py
 import pyqtgraph as pg
-from helper_files.classes.Colorbar import *
+from gui.colorbar import *
 
 """ Object for loading and color data and building color bars / map data for each field. """
 

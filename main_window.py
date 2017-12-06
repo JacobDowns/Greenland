@@ -1,9 +1,9 @@
 
 from PyQt4 import QtCore, QtGui
-from main_panel import *
-from right_panel import *
-from data_view_widget import *
-from data_loader import *
+from gui.right_panel import *
+from gui.data_view_widget import *
+from utility.data_loader import *
+from utility.color_data_loader import *
 
 """ Main GUI window. """
 
@@ -107,7 +107,6 @@ class MainWindow():
         y = ev.pos().y()
 
         if self.key_pressed['shift']:
-
             self.main_panel.addFlowline(x,y)
         else :
             self.main_panel.mouseClick()
@@ -129,7 +128,9 @@ class MainWindow():
         self.main_panel.generateMeshClicked()
 
 
-
+    # Flowline graph button clicked
+    def flowlineGraphClicked(self, ev):
+        self.main_panel.flowlineGraphClicked()
 
 
 mw = MainWindow()

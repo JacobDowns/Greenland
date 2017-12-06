@@ -2,16 +2,17 @@
 
 import sys
 from PyQt4 import QtGui
-from helper_files.classes.ColorBarAnchorWidget import ColorBarAnchorWidget
+from gui.colorbar_anchor_widget import ColorBarAnchorWidget
 import pyqtgraph as pg
-from flow_integrator import FlowIntegrator
-from width_calculator import WidthCalculator
-from flowline_plot import FlowlinePlot
-from flowline_data import FlowlineData
+from utility.flow_integrator import FlowIntegrator
+from utility.width_calculator import WidthCalculator
+from gui.flowline_plot import FlowlinePlot
+from utility.flowline_data import FlowlineData
+from gui.flowline_path import FlowlinePath
 import numpy as np
 
 
-""" Widget for viewing data. """
+""" Widget where data is displayed. """
 
 class DataViewWidget(pg.PlotWidget):
 
@@ -103,70 +104,87 @@ class DataViewWidget(pg.PlotWidget):
 
     ### Add a flowline
     def addFlowline(self, x, y):
-        x_interp, y_interp = self.flow_integrator.integrate(x, y)
-        self.flowlines.append((x_interp, y_interp))
-
-        ts = np.linspace(0., 1., 1500)
-        flowline = pg.PlotDataItem(x_interp(ts), y_interp(ts), pen = self.flowline_pen)
+        xs, ys, ts = self.flow_integrator.integrate(x, y)
+        flowline = FlowlinePath()
+        flowline.setData(x = xs, y = ys, symbolSize = 18., pxMode = True, pen = self.flowline_pen)
+        flowline.selectFlowline = self.selectFlowline
         flowline.setZValue(1)
+
+        self.flowlines.append(flowline)
         self.addItem(flowline)
-
-
-        if len(self.flowlines) == 3:
-            xc = self.flowlines[0][0]
-            yc = self.flowlines[0][1]
-            xb1 = self.flowlines[1][0]
-            yb1 = self.flowlines[1][1]
-            xb2 = self.flowlines[2][0]
-            yb2 = self.flowlines[2][1]
-
-            width_calculator = WidthCalculator(xc, yc, xb1, yb1, xb2, yb2)
-            fg = width_calculator.get_width()
-            fg.setZValue(1)
-            self.addItem(fg)
-            self.flowline_graphs.append(fg)
 
 
     ### Mouse click event
     def mouseClick(self):
+        for f in self.flowlines:
+            f.offPointClick()
+
         for g in self.flowline_graphs:
             g.offPointClick()
 
 
     ### ctrl key pressed
     def ctrlKeyPressed(self):
+        for f in self.flowlines:
+            f.ctrl_pressed = True
+
         for g in self.flowline_graphs:
             g.ctrl_pressed = True
 
 
     ### ctrl key released
     def ctrlKeyReleased(self):
+        for f in self.flowlines:
+            f.ctrl_pressed = False
+
         for g in self.flowline_graphs:
             g.ctrl_pressed = False
 
 
     ### del key released
     def delKeyPressed(self):
+        for f in self.flowlines:
+            f.deleteKeyPressed()
+
         for g in self.flowline_graphs:
             g.deleteKeyPressed()
 
 
     ### e key pressed
     def eKeyPressed(self):
+        for f in self.flowlines:
+            f.extendKeyPressed()
+
         for g in self.flowline_graphs:
             g.extendKeyPressed()
 
 
     ### s key pressed
     def sKeyPressed(self):
+        for f in self.flowlines:
+            f.subdivideKeyPressed()
+
         for g in self.flowline_graphs:
             g.subdivideKeyPressed()
 
 
     ### Mouse move event
     def mouseMove(self, ev):
+
+        for f in self.flowlines:
+            f.mouseMove(self.getViewBox().mapToView(ev.pos()))
+
         for g in self.flowline_graphs:
             g.mouseMove(self.getViewBox().mapToView(ev.pos()))
+
+
+    ### Function called by a flowline path when one of it's points is clicked on
+    ### or dragged. Deselects all points in other flowlines
+    def selectFlowline(self, flowline):
+        for g in self.flowlines:
+            if not flowline == g:
+                g.deselectAll()
+                g.updateGraph()
 
 
     ### Plot path button clicked
@@ -175,8 +193,38 @@ class DataViewWidget(pg.PlotWidget):
             plot = FlowlinePlot(self.main_window, self.flowline_graphs[0])
 
 
+    ### Flowline graph button clicked
+    def flowlineGraphClicked(self):
+        if len(self.flowlines) == 3:
+            resolution, ok = QtGui.QInputDialog.getText(self, 'Input Dialog',
+                'Resolution (m)')
 
-    # Generate mesh button
+            if ok:
+                if resolution == '':
+                    1000.0
+
+                # If there are 3 flowlines, create a flowline graph
+                cxs = self.flowlines[0].data['x']
+                cys = self.flowlines[0].data['y']
+                bxs1 = self.flowlines[1].data['x']
+                bys1 = self.flowlines[1].data['y']
+                bxs2 = self.flowlines[2].data['x']
+                bys2 = self.flowlines[2].data['y']
+
+                wc = WidthCalculator(cxs, cys, bxs1, bys1, bxs2, bys2, float(resolution))
+                fg = wc.get_width()
+                fg.setZValue(1)
+                self.addItem(fg)
+                self.flowline_graphs.append(fg)
+
+                for f in self.flowlines:
+                    f.data['symbolSize'] = 0.
+                    f.updateGraph()
+
+                self.flowlines = []
+
+
+    ### Generate mesh button clicked
     def generateMeshClicked(self):
         if len(self.flowline_graphs) > 0:
             file_name, ok = QtGui.QInputDialog.getText(self, 'Input Dialog',
@@ -190,5 +238,5 @@ class DataViewWidget(pg.PlotWidget):
 
                 # Get flowline data
                 fd = FlowlineData(self.main_window, self.flowline_graphs[0])
-                fd.generate_mesh()
-                print fd
+                fd.write_data(str(file_name))
+        i

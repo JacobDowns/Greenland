@@ -26,7 +26,7 @@ class RightPanel(QtGui.QWidget):
         self.map_combo.setMaximumWidth(max_width)
         self.layout().addWidget(self.map_combo)
 
-        # Plot path button
+        ### Plot path button
         self.plot_path_button = QtGui.QPushButton('Plot Path')
         self.plot_path_button.setEnabled(True)
         self.plot_path_button.setMaximumWidth(max_width)
@@ -34,7 +34,7 @@ class RightPanel(QtGui.QWidget):
         # Event handler
         self.plot_path_button.clicked.connect(main_window.plotPathClicked)
 
-        # Generate mesh button
+        ### Generate mesh button
         self.generate_mesh_button = QtGui.QPushButton('Generate Mesh')
         self.generate_mesh_button.setEnabled(True)
         self.generate_mesh_button.setMaximumWidth(max_width)
@@ -42,10 +42,21 @@ class RightPanel(QtGui.QWidget):
         # Event handler
         self.generate_mesh_button.clicked.connect(main_window.generateMeshClicked)
 
+
+        ### Create a flowline graph button
+        self.flowline_graph_button = QtGui.QPushButton('Create Flow Graph')
+        self.flowline_graph_button.setEnabled(True)
+        self.flowline_graph_button.setMaximumWidth(max_width)
+        self.layout().addWidget(self.flowline_graph_button)
+        # Event handler
+        self.flowline_graph_button.clicked.connect(main_window.flowlineGraphClicked)
+
+
         # Text output box
         self.text_box = QtGui.QTextBrowser()
         self.text_box.setMaximumWidth(max_width)
         self.layout().addWidget(self.text_box)
+
 
         # Set layout width
         self.setMaximumWidth(300 + 12)

@@ -5,7 +5,7 @@ import fenics as fc
 
 
 """
-Calculates surface, smb, thickness, etc. given a flowline graph.
+Calculates surface, smb, thickness, etc. on a given a flowline graph.
 """
 
 class FlowlineData():
@@ -25,8 +25,11 @@ class FlowlineData():
         self.distances = np.sqrt(((self.center_coords[1:] - self.center_coords[:-1])**2).sum(axis = 1))
         self.distances = np.insert(self.distances, 0, 0.)
         # Distance multiplier to convert from view coordinates to a real distance in meters
-        dist_mult = 150
+        dist_mult = 150.
         self.distances = np.cumsum(self.distances) * dist_mult
+        # Flip so divide is at 0
+        #self.distances = self.distances[::-1]
+        #self.distances = self.distances[0] - self.distances
 
 
         ### Get flowline data
@@ -50,7 +53,7 @@ class FlowlineData():
     ### Generate a mesh and write flowline data for fenics
     def write_data(self, file_name):
 
-
+        print file_name
 
 
         ### Create a 1d mesh
@@ -73,23 +76,38 @@ class FlowlineData():
             editor.add_cell(i, np.array([i, i+1], dtype = np.uintp))
 
         editor.close()
-        #fc.File(file_name + ".xml") << mesh
 
 
-        ### Create hdf5 file
+        ### Create output hdf5 file
 
-        fc.HDF5File(self.mesh.mpi_comm(), file_name, "w")
+        out_file = fc.HDF5File(mesh.mpi_comm(), file_name, "w")
 
 
-        ### Create data functions
+        ### Create and set data functions
 
         V = fc.FunctionSpace(mesh, "CG", 1)
         smb = fc.Function(V)
         surface = fc.Function(V)
         bed = fc.Function(V)
         width = fc.Function(V)
+        thickness = fc.Function(V)
+
+        smb.vector().set_local(self.flowline_data['smb'])
+        smb.vector().apply("insert")
+        surface.vector().set_local(self.flowline_data['surface'])
+        surface.vector().apply("insert")
+        bed.vector().set_local(self.flowline_data['bed'])
+        bed.vector().apply("insert")
+        width.vector().set_local(self.flowline_data['width'])
+        width.vector().apply("insert")
+        thickness.vector().set_local(self.flowline_data['surface'] - self.flowline_data['bed'])
+        thickness.vector().apply("insert")
 
 
-
-
-        smb.vector()[:] = self.flowline_data['smb']
+        out_file.write(mesh, "/mesh")
+        out_file.write(smb.vector(), "/smb")
+        out_file.write(surface.vector(), "/surface")
+        out_file.write(bed.vector(), "/bed")
+        out_file.write(width.vector(), "/width")
+        out_file.write(thickness.vector(), "/thickness")
+        out_file.close()

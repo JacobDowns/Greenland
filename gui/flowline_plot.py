@@ -1,7 +1,7 @@
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
 from pyqtgraph import LegendItem
-from flowline_data import FlowlineData
+from utility.flowline_data import FlowlineData
 import numpy as np
 
 """

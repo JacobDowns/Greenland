@@ -23,7 +23,7 @@ class FlowIntegrator():
             vx = data_loader.get_field_val('VX', x, y)
             vy = data_loader.get_field_val('VY', x, y)
             v_mag = np.sqrt(vx**2 + vy**2)
-            return np.array([-vx, -vy, v_mag])
+            return np.array([-vx / v_mag, -vy / v_mag, v_mag])
 
         # ODE integrator
         self.integrator = ode(rhs).set_integrator('vode', method = 'adams')
@@ -33,8 +33,12 @@ class FlowIntegrator():
     def integrate(self, x0, y0):
         u0 = np.array([x0, y0, 0.])
         self.integrator.set_initial_value(u0, 0.0)
-        # time step (years)
-        dt = 0.002
+
+        # Approximate spacing in m between points (depends on actual flow path)
+        spacing = 1000.0
+        dist_mult = 150.
+        # time step
+        dt = spacing / dist_mult
 
         # vx and vy at current location
         vx = self.data_loader.get_field_val('VX', x0, y0)
@@ -46,6 +50,8 @@ class FlowIntegrator():
         ys = [y0]
         # Distance traveled
         ds = [0.0]
+        # times
+        ts = [0.]
 
         i = 0
         while self.integrator.successful() and v_mag > 10.0:
@@ -59,23 +65,13 @@ class FlowIntegrator():
             xs.append(x)
             ys.append(y)
             ds.append(d)
+            ts.append(self.integrator.t)
 
             vx = self.data_loader.get_field_val('VX', x, y)
             vy = self.data_loader.get_field_val('VY', x, y)
             v_mag = np.sqrt(vx**2 + vy**2)
 
-
-        ### Find points on curve that are x km apart
-
-        # Spaced points
-        xs_spaced = [x0]
-        ys_spaced = [y0]
-
-        # Interpolate x and y
-        ts = np.linspace(0.0, 1., len(xs))
-        x_interp = interpolate.interp1d(ts, xs)
-        y_interp = interpolate.interp1d(ts, ys)
-
+        """
         # Last point along the curve
         x_last = x0
         y_last = y0
@@ -99,6 +95,7 @@ class FlowIntegrator():
                 sample_ts.append(t0)
         except:
             # Catches exception that f must have opposite signs at ends of interval
-            pass
+            pass"""
 
-        return x_interp, y_interp
+
+        return np.array(xs), np.array(ys), np.array(ts)
