@@ -100,10 +100,8 @@ class WidthCalculator():
 
         def f(t):
             # u and v coordinates of boundary curve where origin is centered at x0, y0
-            print "t", t
             u = xb_interp(t) - x0
             v = yb_interp(t) - y0
-            print tan
             # Return component of (u,v) in direction of tangent
             return np.dot(np.array([u,v]), tan)
 
